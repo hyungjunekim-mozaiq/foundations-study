@@ -17,10 +17,16 @@ assert.equal(schedule(0,'good',now).due,now+86400000);
 assert.equal(schedule(1,'good',now).due,now+3*86400000);
 assert.equal(schedule(5,'good',now).due,now+30*86400000);
 assert.equal(schedule(4,'again',now).due,now+600000);assert.equal(schedule(4,'hard',now).step,0);
-const ctx={window:{}};vm.createContext(ctx);vm.runInContext(fs.readFileSync(require.resolve('../lessons.js'),'utf8'),ctx);
-const lessons=ctx.window.LESSONS;assert.equal(lessons.length,3);
+const ctx={window:{}};vm.createContext(ctx);
+for(const filename of ['map.js','lessons.js','pool-lessons.js','pool-depth.js'])vm.runInContext(fs.readFileSync(require.resolve('../'+filename),'utf8'),ctx);
+const lessons=ctx.window.LESSONS;assert.equal(lessons.length,15);
 const ids=new Set();let sections=0,problems=0,reviews=0;
 for(const l of lessons){assert(!ids.has(l.id));ids.add(l.id);sections+=l.sections.length;problems+=l.problems.length;reviews+=l.review.length;assert(l.sources.length);for(const group of [l.sections,l.problems,l.review])assert.equal(new Set(group.map(x=>x.id)).size,group.length);for(const p of l.problems){assert(p.hint&&p.solution&&p.rubric.length);if(p.kind==='number')assert(checkNumber(p.value,p.value,p.tolerance));}}
+for(const stage of ctx.window.POOL_PATH)for(const id of stage.ids)assert(ids.has(id),`unknown pool lesson ${id}`);
+for(const area of ctx.window.STUDY_MAP)for(const track of area.tracks){assert(track.parts.length>=4);for(const id of track.ids)assert(ids.has(id),`unknown map lesson ${id}`);}
+assert.equal(ctx.window.STUDY_MAP.length,9);
+assert.equal(ctx.window.POOL_PATH.flatMap(stage=>stage.ids).length,12);
+assert.equal(sections,107);
 assert.equal(lessons[2].problems.find(p=>p.id==='target').value.toFixed(1),(-836*Math.log(.25)/60).toFixed(1));
 console.log(`Passed: physical invariants, numeric grading, review scheduling, ${sections} sections / ${problems} problems / ${reviews} review questions.`);
 const {validateBackup}=require('../core.js');
